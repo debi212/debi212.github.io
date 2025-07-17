@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Jogo ODS 12 - Reduzir Desperdício de Alimentos</title>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #d0e8f2;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+    color: #2e4d4d;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 {
+    color: #3b7763;
+    margin-bottom: 10px;
+    text-shadow: 1px 1px 2px #a2c0bc;
+  }
+  #levelDisplay {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #4a6a65;
+  }
+  #timer {
+    font-weight: 700;
+    color: #34675c;
+    font-size: 18px;
+    margin-bottom: 20px;
+  }
+  .game-area {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    flex-wrap: nowrap;
+    margin-bottom: 20px;
+    max-width: 760px;
+  }
+  .food-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    min-width: 230px;
+    max-width: 230px;
+  }
+  .food {
+    padding: 15px 20px;
+    background-color: #a3d2ca;
+    border-radius: 12px;
+    cursor: grab;
+    font-weight: 700;
+    font-size: 16px;
+    user-select: none;
+    color: #1b3a3a;
+    box-shadow: 1px 2px 4px rgba(27, 58, 58, 0.3);
+    transition: transform 0.2s ease, background-color 0.3s ease;
+  }
+  .food.correct {
+    background-color: #7bd6aa !important;
+    color: #154d35;
+    transform: scale(1.1);
+    box-shadow: 0 0 8px #5fc477;
+  }
+  .food.wrong {
+    background-color: #f7a1a1 !important;
+    color: #7f2a2a;
+    transform: scale(1.1);
+    box-shadow: 0 0 8px #d95c5c;
+  }
+  .dropzone {
+    width: 240px;
+    min-height: 320px;
+    border: 3px dashed #66a5ad;
+    border-radius: 15px;
+    padding: 15px;
+    background-color: #e4f0f6;
+    box-shadow: 1px 2px 6px rgba(51, 102, 119, 0.2);
+    color: #31708e;
+  }
+  .dropzone h3 {
+    color: #31708e;
+    margin-top: 0;
+    font-weight: 700;
+    text-shadow: 1px 1px 1px #c9e6f3;
+  }
+  #message, #stats, #ranking, #challenge {
+    font-size: 18px;
+    margin: 15px auto;
+    max-width: 600px;
+    color: #2e4d4d;
+  }
+  #message {
+    font-style: italic;
+    min-height: 50px;
+    margin-bottom: 20px;
+    color: #3b7763;
+    min-height: 3em;
+  }
+  button {
+    background-color: #5dbb8a;
+    border: none;
+    color: white;
+    padding: 12px 28px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 15px;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 8px rgba(93, 187, 138, 0.4);
+  }
+  button:hover:not(:disabled) {
+    background-color: #4a9e6f;
+    box-shadow: 0 6px 12px rgba(74, 158, 111, 0.6);
+  }
+  button:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+  #quiz, #gameScreen {
+    max-width: 760px;
+    width: 100%;
+  }
+  #quiz {
+    background: #c9e6f3;
+    border-radius: 15px;
+    padding: 25px 30px;
+    box-shadow: 2px 4px 10px rgba(44, 100, 131, 0.3);
+    display: none;
+    color: #1b3a3a;
+  }
+  .quiz-question {
+    font-weight: 700;
+    margin-bottom: 15px;
+    font-size: 20px;
+  }
+  .quiz-options {
+    list-style-type: none;
+    padding: 0;
+    text-align: left;
+  }
+  .quiz-options li {
+    margin: 10px 0;
+  }
+  .quiz-options label {
+    cursor: pointer;
+    font-size: 17px;
+  }
+  #quizResult {
+    font-weight: 700;
+    margin-top: 20px;
+  }
+  ol {
+    padding-left: 20px;
+    max-width: 400px;
+    margin: 10px auto;
+    text-align: left;
+  }
+  #ranking {
+    max-width: 400px;
+    margin: 25px auto;
+    background: #a3d2ca;
+    padding: 15px 25px;
+    border-radius: 15px;
+    box-shadow: 1px 2px 6px rgba(27,58,58,0.3);
+    color: #154d35;
+    display: none;
+  }
+  #challenge {
+    max-width: 550px;
+    margin: 25px auto;
+    background: #b7d7d6;
+    padding: 20px 30px;
+    border-radius: 15px;
+    box-shadow: 1px 2px 8px rgba(51,102,119,0.3);
+    color: #1b3a3a;
+    display: none;
+    font-size: 18px;
+  }
+</style>
+</head>
+<body>
+
+<h1>ODS 12 - Reduzir Desperdício de Alimentos</h1>
+
+<!-- Tela do Jogo -->
+<div id="gameScreen">
+  <div id="levelDisplay"></div>
+  <div id="timer"></div>
+
+  <div class="game-area" id="gameArea">
+    <div class="food-list" id="foodList"></div>
+
+    <div class="dropzone" ondrop="drop(event, 'bom')" ondragover="allowDrop(event)">
+      <h3>Reaproveitar (Bom)</h3>
+    </div>
+
+    <div class="dropzone" ondrop="drop(event, 'ruim')" ondragover="allowDrop(event)">
+      <h3>Descartar (Ruim)</h3>
+    </div>
+  </div>
+
+  <div id="message"></div>
+  <button id="nextRoundBtn" style="display:none;">Ir para o Quiz</button>
+</div>
+
+<!-- Tela do Quiz -->
+<div id="quiz">
+  <div class="quiz-question" id="quizQuestion"></div>
+  <ul class="quiz-options" id="quizOptions"></ul>
+  <button id="submitQuizBtn" disabled>Enviar Resposta</button>
+  <div id="quizResult"></div>
+</div>
+
+<!-- Ranking -->
+<div id="ranking">
+  <h3>Resultado do Quiz</h3>
+  <ol id="rankingList"></ol>
+</div>
+
+<!-- Desafio -->
+<div id="challenge">
+  <h3>Desafio Extra: Dicas para Reduzir Desperdício</h3>
+  <ol>
+    <li>Planeje suas compras para evitar excessos.</li>
+    <li>Armazene alimentos corretamente para aumentar a vida útil.</li>
+    <li>Aproveite cascas, talos e restos para receitas.</li>
+    <li>Congele sobras para consumir depois.</li>
+    <li>Doe alimentos que não vai consumir a tempo.</li>
+  </ol>
+</div>
+
+<script>
+  
+  const levels = [
+    {
+      levelName: "",
+      foods: [
+        { name: "Sopas reaproveitadas", status: "bom", recipe: "Reaqueça e consuma." },
+        { name: "Legumes machucados", status: "bom", recipe: "Use para fazer purê." },
+        { name: "Frutas maduras demais", status: "bom", recipe: "Ideal para bolo." },
+        { name: "Alimentos contaminados", status: "ruim" },
+        { name: "Pratos estragados", status: "ruim" },
+        { name: "Alimentos armazenados incorretamente", status: "ruim" }
+      ]
+    }
+  ];
+
+  const quizQuestions = [
+    {
+      question: "Qual a melhor forma de evitar desperdício de alimentos?",
+      options: [
+        "Planejar as compras e armazenar corretamente",
+        "Comprar em excesso para garantir estoque",
+        "Descartar alimentos sempre que sobrar",
+        "Ignorar validade e consumir qualquer coisa"
+      ],
+      correct: 0
+    },
+    {
+      question: "O que pode ser feito com frutas maduras demais?",
+      options: [
+        "Descartar imediatamente",
+        "Usar para fazer bolo ou sucos",
+        "Deixar estragar para não consumir",
+        "Guardar sem refrigeração por semanas"
+      ],
+      correct: 1
+    },
+    {
+      question: "Por que reaproveitar restos de comida é importante?",
+      options: [
+        "Para reduzir o desperdício e economizar",
+        "Para evitar lavar a louça",
+        "Para acumular comida na geladeira",
+        "Para atrair insetos e pragas"
+      ],
+      correct: 0
+    },
+  ];
+
+  // Estado do jogo
+  let currentFoods = [];
+  let correctCount = 0;
+  let totalItems = 0;
+
+  // Elementos DOM - Jogo
+  const foodList = document.getElementById('foodList');
+  const message = document.getElementById('message');
+  const nextRoundBtn = document.getElementById('nextRoundBtn');
+
+  // Elementos DOM - Quiz
+  const quizDiv = document.getElementById('quiz');
+  const quizQuestion = document.getElementById('quizQuestion');
+  const quizOptions = document.getElementById('quizOptions');
+  const submitQuizBtn = document.getElementById('submitQuizBtn');
+  const quizResult = document.getElementById('quizResult');
+
+  // Outras telas
+  const gameScreen = document.getElementById('gameScreen');
+  const rankingDiv = document.getElementById('ranking');
+  const rankingList = document.getElementById('rankingList');
+  const challengeDiv = document.getElementById('challenge');
+
+  // Permitir drop
+  function allowDrop(ev) {
+    ev.preventDefault();
+  }
+
+  // Drag start
+  function drag(ev) {
+    ev.dataTransfer.setData("text", ev.target.id);
+  }
+
+  // Drop
+  function drop(ev, zone) {
+    ev.preventDefault();
+    const id = ev.dataTransfer.getData("text");
+    const foodItem = document.getElementById(id);
+
+    if (!foodItem || foodItem.classList.contains('correct') || foodItem.classList.contains('wrong')) {
+      return; 
+    }
+
+    const foodName = foodItem.dataset.name;
+    const foodStatus = foodItem.dataset.status;
+
+    if (zone === foodStatus) {
+      foodItem.classList.add('correct');
+      message.textContent = `Ótimo! "${foodName}" deve ser reaproveitado ou descartado corretamente.`;
+      correctCount++;
+    } else {
+      foodItem.classList.add('wrong');
+      message.textContent = `Ops! "${foodName}" não deve ir para essa categoria.`;
+    }
+
+    totalItems++;
+
+    if (totalItems === currentFoods.length) {
+      nextRoundBtn.style.display = 'inline-block';
+      message.textContent += " Clique em 'Ir para o Quiz' para continuar.";
+    }
+  }
+
+  // Criar os itens para drag
+  function createFoodItems(foods) {
+    foodList.innerHTML = '';
+    foods.forEach((food, i) => {
+      const div = document.createElement('div');
+      div.className = 'food';
+      div.id = 'food' + i;
+      div.draggable = true;
+      div.textContent = food.name;
+      div.dataset.status = food.status;
+      div.dataset.name = food.name;
+      div.addEventListener('dragstart', drag);
+      foodList.appendChild(div);
+    });
+  }
+
+  // Iniciar rodada do jogo
+  function startRound() {
+    message.textContent = "";
+    nextRoundBtn.style.display = 'none';
+    currentFoods = levels[0].foods;
+    correctCount = 0;
+    totalItems = 0;
+    createFoodItems(currentFoods);
+    quizDiv.style.display = 'none';
+    rankingDiv.style.display = 'none';
+    challengeDiv.style.display = 'none';
+    gameScreen.style.display = 'block';
+  }
+
+  nextRoundBtn.onclick = () => {
+    startQuiz();
+  };
+
+  // Variáveis do quiz
+  let currentQuestionIndex = 0;
+
+  function startQuiz() {
+    gameScreen.style.display = 'none';
+    rankingDiv.style.display = 'none';
+    challengeDiv.style.display = 'none';
+    quizDiv.style.display = 'block';
+    currentQuestionIndex = 0;
+    showQuestion(currentQuestionIndex);
+  }
+
+  function showQuestion(index) {
+    const q = quizQuestions[index];
+    quizQuestion.textContent = q.question;
+    quizOptions.innerHTML = '';
+    q.options.forEach((opt, i) => {
+      const li = document.createElement('li');
+      const label = document.createElement('label');
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = 'quizOption';
+      radio.value = i;
+      radio.addEventListener('change', () => {
+        submitQuizBtn.disabled = false;
+      });
+      label.appendChild(radio);
+      label.append(' ' + opt);
+      li.appendChild(label);
+      quizOptions.appendChild(li);
+    });
+    submitQuizBtn.disabled = true;
+    quizResult.textContent = '';
+  }
+
+  submitQuizBtn.onclick = () => {
+    const selected = document.querySelector('input[name="quizOption"]:checked');
+    if (!selected) return;
+
+    const answer = parseInt(selected.value);
+    const correctAnswer = quizQuestions[currentQuestionIndex].correct;
+
+    if (answer === correctAnswer) {
+      quizResult.textContent = "Resposta correta!";
+      quizResult.style.color = 'green';
+    } else {
+      quizResult.textContent = "Resposta incorreta.";
+      quizResult.style.color = 'red';
+    }
+
+    submitQuizBtn.disabled = true;
+
+    setTimeout(() => {
+      currentQuestionIndex++;
+      if (currentQuestionIndex < quizQuestions.length) {
+        showQuestion(currentQuestionIndex);
+      } else {
+        finishQuiz();
+      }
+    }, 2000);
+  };
+
+  function finishQuiz() {
+    quizDiv.style.display = 'none';
+    rankingList.innerHTML = '';
+    quizQuestions.forEach((q, i) => {
+      const li = document.createElement('li');
+      li.textContent = q.question + " - Resposta correta: " + q.options[q.correct];
+      rankingList.appendChild(li);
+    });
+    rankingDiv.style.display = 'block';
+    challengeDiv.style.display = 'block';
+    message.textContent = "";
+  }
+
+  startRound();
+</script>
+
+</body>
+</html>
